@@ -7,6 +7,7 @@ const mongoose = require("mongoose")
 const topicRoutes = require("./routes/topicRoutes")
 const mcqRoutes = require("./routes/mcqRoutes")
 const interviewRoutes = require("./routes/interview")
+const userRoutes = require("./routes/userRoutes")
 
 const app = express();
 app.use(express.json());
@@ -15,6 +16,7 @@ app.use(cors());
 app.use("/topic", topicRoutes)
 app.use("/mcq", mcqRoutes)
 app.use("/interview", interviewRoutes)
+app.use("/user", userRoutes)
 
 app.use("/", async(req, res)=>{
     res.send("<h1>Interview Prep </h1>")
