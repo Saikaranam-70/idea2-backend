@@ -7,9 +7,7 @@ const redis = require("../config/redis");
 const MCQ_TOPIC_KEY = (topicId) => `mcqs:topic:${topicId}`;
 const MCQ_SINGLE_KEY = (id) => `mcq:${id}`;
 
-/* =========================
-   CREATE MCQ
-========================= */
+
 exports.createMCQ = async (req, res) => {
   try {
     const { topicId, question, options, correctOptionIndex, explanation } =
@@ -179,6 +177,56 @@ exports.deleteMCQ = async (req, res) => {
     res.json({
       success: true,
       message: "MCQ deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+/* =========================
+   BULK CREATE MCQs
+========================= */
+exports.bulkCreateMCQs = async (req, res) => {
+  try {
+    const { topicId, mcqs } = req.body;
+
+    if (!topicId) {
+      return res.status(400).json({ message: "topicId required" });
+    }
+
+    if (!Array.isArray(mcqs) || mcqs.length === 0) {
+      return res.status(400).json({ message: "mcqs array required" });
+    }
+
+    // validate each mcq
+    for (const m of mcqs) {
+      if (!m.question || !m.options || m.options.length !== 4) {
+        return res.status(400).json({
+          message: "Each MCQ must have question & 4 options",
+        });
+      }
+
+      if (m.correctOptionIndex < 0 || m.correctOptionIndex > 3) {
+        return res.status(400).json({
+          message: "correctOptionIndex must be 0-3",
+        });
+      }
+    }
+
+    const docs = mcqs.map((m) => ({
+      topicId,
+      ...m,
+    }));
+
+    await MCQ.insertMany(docs);
+
+    // ❌ invalidate cache
+    await redis.del(`mcqs:topic:${topicId}`);
+
+    res.status(201).json({
+      success: true,
+      message: `${docs.length} MCQs uploaded successfully`,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

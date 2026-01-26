@@ -5,10 +5,15 @@ const multer = require("multer");
 const {
   createTopic,
   getAllTopics,
-  getTopicsByCategory,
+  
   updateTopic,
   deleteTopic,
   allTopicsNames,
+  getTodayTopic,
+  getTopicsBySubject,
+  getTopicById,
+  getSubjectNameByTopicId,
+  getAllTopicsInOrder,
 } = require("../controller/topicController");
 
 
@@ -24,7 +29,7 @@ router.post(
 
 router.get("/", getAllTopics);
 
-router.get("/category/:category", getTopicsByCategory);
+router.get("/subject/:subject", getTopicsBySubject);
 
 router.put(
   "/:id",
@@ -34,5 +39,9 @@ router.put(
 
 router.delete("/:id", deleteTopic);
 router.get("/topic-names", allTopicsNames)
+router.get("/today", getTodayTopic);
+router.get("/:topicId", getTopicById)
+router.get("/subject-name/:topicId", getSubjectNameByTopicId)
+router.get("/topics-order", getAllTopicsInOrder)
 
 module.exports = router;

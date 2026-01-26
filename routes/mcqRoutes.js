@@ -10,5 +10,6 @@ router.delete("/:id", mcqController.deleteMCQ);
 // Public
 router.get("/topic/:topicId", mcqController.getMCQsByTopic);
 router.get("/:id", mcqController.getMCQById);
+router.post("/bulk", mcqController.bulkCreateMCQs);
 
 module.exports = router;

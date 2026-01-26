@@ -2,6 +2,17 @@ const Topic = require("../model/Topic");
 const redis = require("../config/redis");
 const cloudinary = require("../config/cloudinary");
 
+const CATEGORY_ORDER = [
+  "OS",
+  "DBMS",
+  "CN",
+  "OOPS",
+  "DSA",
+  "APTITUDE",
+  "INTERVIEW",
+];
+
+
 /* ================= CLOUDINARY UPLOAD ================= */
 const uploadToCloudinary = async (file, folder) => {
   return await cloudinary.uploader.upload(file.path, {
@@ -105,12 +116,32 @@ exports.getAllTopics = async (req, res) => {
   }
 };
 
-/* ================= GET BY CATEGORY ================= */
-exports.getTopicsByCategory = async (req, res) => {
+exports.getTopicsBySubject = async (req, res) => {
   try {
-    const { category } = req.params;
-    const cacheKey = `topics:${category}`;
+    const { subject } = req.params;
+    const updatedSubject = subject.toUpperCase();
 
+    const VALID_SUBJECTS = [
+      "OS",
+      "DBMS",
+      "CN",
+      "OOPS",
+      "DSA",
+      "APTITUDE",
+      "INTERVIEW",
+    ];
+
+    // ✅ Validate subject
+    if (!VALID_SUBJECTS.includes(updatedSubject)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid subject",
+      });
+    }
+
+    const cacheKey = `topics:subject:${updatedSubject}`;
+
+    // ✅ Check cache
     const cached = await redis.get(cacheKey);
     if (cached) {
       return res.json({
@@ -120,15 +151,27 @@ exports.getTopicsByCategory = async (req, res) => {
       });
     }
 
-    const topics = await Topic.find({ category }).sort({ order: 1 });
+    // ✅ Fetch topics
+    const topics = await Topic.find({ category: updatedSubject })
+      .sort({ order: 1 });
 
+    // ✅ Store in cache
     await redis.set(cacheKey, JSON.stringify(topics), "EX", 300);
 
-    res.json({ success: true, data: topics });
+    res.json({
+      success: true,
+      source: "db",
+      data: topics,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
+
+
 
 /* ================= UPDATE TOPIC ================= */
 exports.updateTopic = async (req, res) => {
@@ -232,6 +275,182 @@ exports.allTopicsNames = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+exports.getTodayTopic = async (req, res) => {
+  try {
+    const cacheKey = "topic:today";
+    await redis.del("topic:today")
+
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.json({
+        success: true,
+        source: "cache",
+        data: JSON.parse(cached),
+      });
+    }
+
+    let orderedTopics = [];
+
+    for (const category of CATEGORY_ORDER) {
+      const topics = await Topic.find({ category }).sort({ order: 1 });
+      orderedTopics.push(...topics);
+    }
+
+    if (!orderedTopics.length) {
+      return res.status(404).json({ success: false, message: "No topics found" });
+    }
+
+    const START_DATE = new Date("2026-01-26");
+    START_DATE.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const daysPassed = Math.max(
+      0,
+      Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24))
+    );
+
+    const todayTopic = orderedTopics[daysPassed % orderedTopics.length];
+
+    await redis.set(cacheKey, JSON.stringify(todayTopic), "EX", 86400);
+
+    res.json({
+      success: true,
+      source: "db",
+      data: todayTopic,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
+
+exports.getTopicById = async(req, res)=>{
+  try {
+    const {topicId} = req.params;
+    if(!topicId)
+      return res.status(400).json({message: "Topic Id Missing"})
+
+    const cached = await redis.get(`topic:${topicId}`)
+    if(cached)
+      return res.status(200).json(JSON.parse(cached));
+
+    const topic = await Topic.findById(topicId);
+    if(!topic)
+      return res.status(400).json({message: "Topic Not Available"});
+
+    await redis.setex(`topic:${topicId}`, 86400, JSON.stringify(topic));
+    res.status(200).json(topic)
+  } catch (error) {
+    return res.status(500).json({message: "Internal Server Error"})
+  }
+}
+
+exports.getSubjectNameByTopicId = async (req, res) => {
+  try {
+    const { topicId } = req.params;
+
+    if (!topicId) {
+      return res.status(400).json({
+        success: false,
+        message: "Topic Id Missing",
+      });
+    }
+
+    // 🔁 Check cache first
+    const cached = await redis.get(`subject:${topicId}`);
+    if (cached) {
+      return res.status(200).json(JSON.parse(cached));
+    }
+
+    // 🔍 Fetch topic from DB
+    const topic = await Topic.findById(topicId).select("category title");
+
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: "Topic not found",
+      });
+    }
+
+    const response = {
+      success: true,
+      topicId,
+      subject: topic.category, // OS / DBMS / CN / etc
+      title: topic.title,
+    };
+
+    // 💾 Cache result (1 hour)
+    await redis.set(
+      `subject:${topicId}`,
+      JSON.stringify(response),
+      "EX",
+      60 * 60
+    );
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("getSubjectByTopicId error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+exports.getAllTopicsInOrder = async (req, res) => {
+  try {
+    const cacheKey = "topics:all:ordered";
+
+    console.log("called");
+
+    // 1️⃣ Check cache
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.json({
+        success: true,
+        source: "cache",
+        data: JSON.parse(cached),
+      });
+    }
+    console.log("called");
+
+    // 2️⃣ Fetch topics in CATEGORY_ORDER
+    let orderedTopics = [];
+
+    for (const category of CATEGORY_ORDER) {
+      const topics = await Topic.find({ category }).sort({ order: 1 }).lean();
+      orderedTopics.push(...topics);
+    }
+
+    // 3️⃣ Safety check
+    if (!orderedTopics.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No topics found",
+      });
+    }
+
+    // 4️⃣ Cache result (24 hours)
+    await redis.set(cacheKey, JSON.stringify(orderedTopics), "EX", 86400);
+
+    // 5️⃣ Return response
+    res.json({
+      success: true,
+      source: "db",
+      count: orderedTopics.length,
+      data: orderedTopics,
+    });
+  } catch (err) {
+    console.error("❌ getAllTopicsInOrder error:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
     });
   }
 };
