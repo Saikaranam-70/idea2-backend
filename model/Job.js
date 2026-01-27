@@ -46,9 +46,6 @@ const jobSchema = new mongoose.Schema(
 
     stipend: {
       type: Number,
-      required: function () {
-        return this.isInternship === true;
-      },
       min: 0,
     },
 
