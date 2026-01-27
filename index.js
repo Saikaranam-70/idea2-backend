@@ -8,6 +8,7 @@ const topicRoutes = require("./routes/topicRoutes")
 const mcqRoutes = require("./routes/mcqRoutes")
 const interviewRoutes = require("./routes/interview")
 const userRoutes = require("./routes/userRoutes")
+const jobRoutes = require("./routes/jobRoutes")
 
 const app = express();
 app.use(express.json());
@@ -17,6 +18,7 @@ app.use("/topic", topicRoutes)
 app.use("/mcq", mcqRoutes)
 app.use("/interview", interviewRoutes)
 app.use("/user", userRoutes)
+app.use("/job", jobRoutes)
 
 app.use("/", async(req, res)=>{
     res.send("<h1>Interview Prep </h1>")
