@@ -1,13 +1,24 @@
 const Job = require("../model/Job");
 const redis = require("../config/redis");
 
+/* ================== HELPER: CLEAR JOB LIST CACHE ================== */
+const clearJobListCache = async () => {
+  const keys = await redis.keys("jobs:all:*");
+  if (keys.length > 0) {
+    await redis.del(keys);
+  }
+
+  // clear raw jobs cache
+  await redis.del("jobs:all:raw");
+};
+
 /* ================== CREATE JOB ================== */
 exports.createJob = async (req, res) => {
   try {
     const job = await Job.create(req.body);
 
-    // ❌ clear cache (important)
-    await redis.del("jobs:all");
+    // clear all job list caches
+    await clearJobListCache();
 
     res.status(201).json({
       success: true,
@@ -22,18 +33,19 @@ exports.createJob = async (req, res) => {
   }
 };
 
-/* ================== GET ALL JOBS ================== */
+/* ================== GET ALL JOBS (WITH FILTERS) ================== */
 /*
- Query filters supported:
- ?internship=true
- ?location=Remote
- ?minStipend=5000
+  Query filters supported:
+  ?internship=true
+  ?hackathon=true
+  ?location=Remote
+  ?minStipend=5000
 */
 exports.getAllJobs = async (req, res) => {
   try {
     const cacheKey = `jobs:all:${JSON.stringify(req.query)}`;
 
-    // ✅ check redis first
+    // check redis
     const cachedJobs = await redis.get(cacheKey);
     if (cachedJobs) {
       return res.json({
@@ -43,12 +55,15 @@ exports.getAllJobs = async (req, res) => {
       });
     }
 
-    const { internship, location, minStipend } = req.query;
-
+    const { internship, hackathon, location, minStipend } = req.query;
     let filter = {};
 
     if (internship !== undefined) {
       filter.isInternship = internship === "true";
+    }
+
+    if (hackathon !== undefined) {
+      filter.isHackathon = hackathon === "true";
     }
 
     if (location) {
@@ -61,7 +76,42 @@ exports.getAllJobs = async (req, res) => {
 
     const jobs = await Job.find(filter).sort({ createdAt: -1 });
 
-    // ✅ save to redis (1 hour)
+    // save to redis (1 hour)
+    await redis.set(cacheKey, JSON.stringify(jobs), "EX", 3600);
+
+    res.json({
+      success: true,
+      fromCache: false,
+      count: jobs.length,
+      data: jobs,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+/* ================== GET ALL JOBS (NO FILTERS – RAW) ================== */
+exports.getAllJobsRaw = async (req, res) => {
+  try {
+    const cacheKey = "jobs:all:raw";
+    // await redis.del("jobs:all:raw")
+    // console.log("hgdjh");
+
+    const cachedJobs = await redis.get(cacheKey);
+    if (cachedJobs) {
+      return res.json({
+        success: true,
+        fromCache: true,
+        count: JSON.parse(cachedJobs).length,
+        data: JSON.parse(cachedJobs),
+      });
+    }
+
+    const jobs = await Job.find({}).sort({ createdAt: -1 });
+
     await redis.set(cacheKey, JSON.stringify(jobs), "EX", 3600);
 
     res.json({
@@ -135,9 +185,9 @@ exports.updateJob = async (req, res) => {
       });
     }
 
-    // ❌ clear cache
+    // clear cache
     await redis.del(`job:${id}`);
-    await redis.del("jobs:all");
+    await clearJobListCache();
 
     res.json({
       success: true,
@@ -166,9 +216,9 @@ exports.deleteJob = async (req, res) => {
       });
     }
 
-    // ❌ clear cache
+    // clear cache
     await redis.del(`job:${id}`);
-    await redis.del("jobs:all");
+    await clearJobListCache();
 
     res.json({
       success: true,

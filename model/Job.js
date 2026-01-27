@@ -33,9 +33,13 @@ const jobSchema = new mongoose.Schema(
         message: "Invalid graduation year",
       },
     },
-    
 
     isInternship: {
+      type: Boolean,
+      default: false,
+    },
+
+    isHackathon: {
       type: Boolean,
       default: false,
     },
