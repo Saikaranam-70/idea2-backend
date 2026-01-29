@@ -1,5 +1,6 @@
 const InterviewQuestion = require("../model/InterviewQuestion");
 const redis = require("../config/redis");
+const Topic = require("../model/Topic");
 
 /* ================= CREATE QUESTION ================= */
 exports.createQuestion = async (req, res) => {
@@ -159,5 +160,61 @@ exports.deleteQuestion = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
+exports.getInterviewQuestionsByCategory = async (req, res) => {
+  try {
+    const { category } = req.params; // OS | DBMS | CN | OOPS | DSA | etc
+
+    const updatedCategory = category.toUpperCase();
+    const cacheKey = `interview:category:${updatedCategory}`;
+
+    
+
+    // 🔹 Check cache
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.json({
+        success: true,
+        source: "cache",
+        data: JSON.parse(cached),
+      });
+    }
+
+    // 🔹 Find topics of that category
+    const topics = await Topic.find({ category: updatedCategory }).select("_id title");
+
+    if (!topics.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No topics found for this category",
+      });
+    }
+
+    const topicIds = topics.map((t) => t._id);
+
+    // 🔹 Find questions linked to those topics
+    const questions = await InterviewQuestion.find({
+      topicId: { $in: topicIds },
+    })
+      .populate("topicId", "title category")
+      .sort({ difficulty: 1, createdAt: -1 });
+
+    // 🔹 Cache for 5 minutes
+    await redis.set(cacheKey, JSON.stringify(questions), "EX", 300);
+
+    res.json({
+      success: true,
+      source: "db",
+      count: questions.length,
+      data: questions,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };

@@ -1,5 +1,5 @@
 const express = require("express");
-const { sendOTP, verifyOTP, checkUsername, completeProfile, getProfile, logout, markTopicAsRead, getTopicReadStatus, submitMCQ, submitInterview, getMCQCompletionStatus, getInterviewCompletionStatus, getStreakAndPoints } = require("../controller/userController");
+const { sendOTP, verifyOTP, checkUsername, completeProfile, getProfile, logout, markTopicAsRead, getTopicReadStatus, submitMCQ, submitInterview, getMCQCompletionStatus, getInterviewCompletionStatus, getStreakAndPoints, getMCQProgressStatus } = require("../controller/userController");
 const authMiddleware = require("../middleware/middleware");
 const { getAllTopicsInOrder } = require("../controller/topicController");
 
@@ -24,5 +24,10 @@ router.get("/mcq-status", authMiddleware, getMCQCompletionStatus);
 router.get("/interview-status", authMiddleware, getInterviewCompletionStatus);
 router.get("/streakandpoints", authMiddleware, getStreakAndPoints)
 router.get("/topics-order", getAllTopicsInOrder)
+router.get(
+  "/mcq-progress-status",
+  authMiddleware,
+  getMCQProgressStatus
+);
 
 module.exports = router;

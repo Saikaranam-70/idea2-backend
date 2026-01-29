@@ -1,4 +1,5 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
+
 
 const InterviewQuestionSchema = new mongoose.Schema({
   topicId: {
@@ -35,4 +36,6 @@ const InterviewQuestionSchema = new mongoose.Schema({
 });
 
 
+
 module.exports = mongoose.model("InterviewQuestion", InterviewQuestionSchema)
+

@@ -397,3 +397,29 @@ exports.getStreakAndPoints = async (req, res) => {
   }
 };
 
+
+
+exports.getMCQProgressStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    const map = {};
+
+    user.mcqProgress.forEach((m) => {
+      map[m.mcqId] = {
+        isCompleted: m.isCompleted,
+        selectedOptionIndex: m.selectedOptionIndex,
+        isCorrect: m.isCorrect,
+        timeSpentSeconds: m.timeSpentSeconds || 0,
+      };
+    });
+
+    res.json({
+      success: true,
+      data: map,
+    });
+  } catch (err) {
+    console.error("getMCQProgressStatus error:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
