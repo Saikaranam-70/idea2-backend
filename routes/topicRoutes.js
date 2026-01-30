@@ -14,6 +14,7 @@ const {
   getTopicById,
   getSubjectNameByTopicId,
   getAllTopicsInOrder,
+  bulkCreateTopicsOrdered,
 } = require("../controller/topicController");
 
 
@@ -43,5 +44,6 @@ router.get("/today", getTodayTopic);
 router.get("/:topicId", getTopicById)
 router.get("/subject-name/:topicId", getSubjectNameByTopicId)
 router.get("/topics-order", getAllTopicsInOrder)
+router.post("/bulk", bulkCreateTopicsOrdered)
 
 module.exports = router;

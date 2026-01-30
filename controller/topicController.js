@@ -454,3 +454,50 @@ exports.getAllTopicsInOrder = async (req, res) => {
     });
   }
 };
+
+
+exports.bulkCreateTopicsOrdered = async (req, res) => {
+  try {
+    let topics = req.body; // array
+
+    if (!Array.isArray(topics) || topics.length === 0) {
+      return res.status(400).json({ message: "Invalid bulk data" });
+    }
+
+    // 1️⃣ Normalize category + order
+    topics = topics.map(t => ({
+      ...t,
+      category: t.category.toUpperCase(),
+      order: Number(t.order) || 0,
+    }));
+
+    // 2️⃣ Sort by CATEGORY_ORDER then order
+    topics.sort((a, b) => {
+      const catDiff =
+        CATEGORY_ORDER.indexOf(a.category) -
+        CATEGORY_ORDER.indexOf(b.category);
+
+      if (catDiff !== 0) return catDiff;
+
+      return a.order - b.order;
+    });
+
+    // 3️⃣ Insert in sorted order
+    const inserted = await Topic.insertMany(topics, {
+      ordered: true, // preserves insert sequence
+    });
+
+    // 4️⃣ Clear relevant cache
+    await redis.del("topics:all");
+    await redis.del("topics:all:ordered");
+    await redis.del("topic:today");
+
+    res.status(201).json({
+      success: true,
+      count: inserted.length,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
