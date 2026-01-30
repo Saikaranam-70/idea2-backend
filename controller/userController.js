@@ -20,18 +20,57 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// const sendOTPEmail = async (email, otp) => {
+//   await transporter.sendMail({
+//     from: "no-reply@brevo.com",
+//     to: email,
+//     subject: "Your Login OTP",
+//     html: `
+//       <h2>Prep App</h2>
+//       <h1>${otp}</h1>
+//       <p>OTP valid for 5 minutes</p>
+//     `,
+//   });
+// };
+
 const sendOTPEmail = async (email, otp) => {
-  await transporter.sendMail({
-    from: "no-reply@brevo.com",
-    to: email,
-    subject: "Your Login OTP",
-    html: `
-      <h2>Prep App</h2>
-      <h1>${otp}</h1>
-      <p>OTP valid for 5 minutes</p>
-    `,
+  console.log(process.env.BERVO_API_KEY);
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "api-key": process.env.BERVO_API_KEY,
+    },
+    body: JSON.stringify({
+      sender: {
+        name: "Prep App",
+        email: "saimanikantakaranam682@gmail.com", // must be verified in Brevo
+      },
+      to: [
+        {
+          email: email,
+        },
+      ],
+      subject: "Your Login OTP",
+      htmlContent: `
+        <html>
+          <body>
+            <h2>Prep App</h2>
+            <h1>${otp}</h1>
+            <p>OTP valid for 5 minutes</p>
+          </body>
+        </html>
+      `,
+    }),
   });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Brevo API failed: ${error}`);
+  }
 };
+
 
 exports.sendOTP = async (req, res) => {
   const { email } = req.body;
