@@ -46,4 +46,8 @@ router.get("/subject-name/:topicId", getSubjectNameByTopicId)
 router.get("/topics-order", getAllTopicsInOrder)
 router.post("/bulk", bulkCreateTopicsOrdered)
 
+router.get("/test", async(req, res)=>{
+  res.status(200).json({message: "Test"})
+})
+
 module.exports = router;
