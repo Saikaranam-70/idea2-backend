@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
 
 const sendOTPEmail = async (email, otp) => {
   await transporter.sendMail({
-    from: `"Prep App" <${process.env.EMAIL}`,
+    from: "no-reply@test.com",
     to: email,
     subject: "Your Login OTP",
     html: `
