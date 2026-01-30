@@ -10,12 +10,12 @@ const generateToken = (userId) =>
   jwt.sign({ id: userId }, process.env.secret_key);
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+  host: "smtp-relay.brevo.com",
   port: 587,
   secure: false,
   auth: {
-    user: process.env.EMAIL,
-    pass: process.env.APP_PASSWORD,
+    user: "apikey",                // ← exactly this
+    pass: process.env.BREVO_API_KEY // ← your real key
   },
 });
 
