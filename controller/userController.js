@@ -9,19 +9,20 @@ const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
 const generateToken = (userId) =>
   jwt.sign({ id: userId }, process.env.secret_key);
 
+
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
   port: 587,
   secure: false,
   auth: {
-    user: "apikey",                // ← exactly this
-    pass: process.env.BREVO_API_KEY // ← your real key
+    user: "a1302f001@smtp-brevo.com",                // ← exactly this
+    pass: process.env.BERVO_API_KEY // ← your real key
   },
 });
 
 const sendOTPEmail = async (email, otp) => {
   await transporter.sendMail({
-    from: "no-reply@test.com",
+    from: "no-reply@brevo.com",
     to: email,
     subject: "Your Login OTP",
     html: `
@@ -39,13 +40,20 @@ exports.sendOTP = async (req, res) => {
   // const alreadySent = await redis.get(`otp:${email}`);
   // if(alreadySent)
   //     return res.status(429).json({message:"OTP Already Sent"});
+  // console.log(process.env.BERVO_API_KEY);
 
   const otp = generateOTP();
   console.log(otp);
 
   await redis.setex(`otp:${email}`, 300, otp);
+  try {
   await sendOTPEmail(email, otp);
   res.json({ message: "OTP sent successfully" });
+} catch (error) {
+  console.error("EMAIL ERROR 👉", error);
+  return res.status(500).json({ message: "Failed to send OTP email" });
+}
+
 };
 
 exports.verifyOTP = async (req, res) => {
