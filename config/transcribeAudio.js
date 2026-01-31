@@ -69,6 +69,8 @@ module.exports = (audioPath) => {
         return reject(new Error("Transcription output not found"));
       }
 
+      console.log(command)
+
       const transcript = fs.readFileSync(txtPath, "utf8").trim();
       fs.unlinkSync(txtPath);
 
