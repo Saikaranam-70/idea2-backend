@@ -3,8 +3,8 @@ const fs = require("fs");
 const path = require("path");
 
 // ✅ ABSOLUTE PATHS (MANDATORY for deployment)
-const WHISPER_EXE = "C:/whisper.cpp/build/bin/whisper-cli.exe";
-const MODEL_PATH = "C:/whisper.cpp/models/ggml-small.en.bin";
+const WHISPER_EXE = "/home/ec2-user/idea2-backend/whisper.cpp/build/bin/whisper-cli";
+const MODEL_PATH = "/home/ec2-user/idea2-backend/whisper.cpp/models/ggml-small.en.bin";
 
 module.exports = (audioPath) => {
   return new Promise((resolve, reject) => {
