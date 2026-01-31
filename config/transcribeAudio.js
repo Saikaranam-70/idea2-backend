@@ -37,11 +37,8 @@
 //   });
 // };
 
-
 const { exec } = require("child_process");
-const fs = require("fs");
 
-// Absolute paths
 const WHISPER_EXE =
   "/home/ec2-user/idea2-backend/whisper.cpp/build/bin/whisper-cli";
 const MODEL_PATH =
@@ -49,32 +46,41 @@ const MODEL_PATH =
 
 module.exports = (audioPath) => {
   return new Promise((resolve, reject) => {
-    const outputBase = audioPath.replace(/\.wav$/, "");
-    const txtPath = `${outputBase}.txt`;
-
     const command = `"${WHISPER_EXE}" \
 -m "${MODEL_PATH}" \
 -f "${audioPath}" \
--otxt \
--of "${outputBase}" \
 --no-gpu \
---no-mmap \
---flash-attn 0 \
--t 1`;
+--no-flash-attn \
+-t 1 \
+--language en`;
 
-    exec(command, { timeout: 5 * 60 * 1000 }, (error) => {
-      if (error) return reject(error);
+    exec(
+      command,
+      {
+        timeout: 5 * 60 * 1000,
+        maxBuffer: 10 * 1024 * 1024, // 10MB stdout
+      },
+      (error, stdout, stderr) => {
+        if (error) return reject(error);
 
-      if (!fs.existsSync(txtPath)) {
-        return reject(new Error("Transcription output not found"));
+        const transcript = stdout
+          .split("\n")
+          .filter(
+            (line) =>
+              line &&
+              !line.startsWith("[") &&
+              !line.includes("whisper_") &&
+              !line.includes("processing")
+          )
+          .join(" ")
+          .trim();
+
+        if (!transcript) {
+          return reject(new Error("Empty transcription output"));
+        }
+
+        resolve(transcript);
       }
-
-      console.log(command)
-
-      const transcript = fs.readFileSync(txtPath, "utf8").trim();
-      fs.unlinkSync(txtPath);
-
-      resolve(transcript);
-    });
+    );
   });
 };
