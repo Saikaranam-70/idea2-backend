@@ -81,6 +81,8 @@ exports.sendOTP = async (req, res) => {
   //     return res.status(429).json({message:"OTP Already Sent"});
   // console.log(process.env.BERVO_API_KEY);
 
+  console.log("called");
+
   const otp = generateOTP();
   console.log(otp);
 
