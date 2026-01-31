@@ -52,7 +52,10 @@ module.exports = (audioPath) => {
 --no-gpu \
 --no-flash-attn \
 -t 1 \
+--beam-size 1 \
+--best-of 1 \
 --language en`;
+
 
     exec(
       command,
