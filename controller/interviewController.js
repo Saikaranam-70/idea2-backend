@@ -33,6 +33,7 @@ exports.createAnswer = async (req, res) => {
 
     /* 3️⃣ Speech → Text */
     const transcriptText = await transcribeAudio(audioPath);
+    console.log(transcriptText);
 
     if (!transcriptText || transcriptText.trim() === "") {
       return res.status(400).json({
