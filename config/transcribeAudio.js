@@ -42,7 +42,7 @@ const { exec } = require("child_process");
 const WHISPER_EXE =
   "/home/ec2-user/idea2-backend/whisper.cpp/build/bin/whisper-cli";
 const MODEL_PATH =
-  "/home/ec2-user/idea2-backend/whisper.cpp/models/ggml-small.en.bin";
+  "/home/ec2-user/idea2-backend/whisper.cpp/models/ggml-tiny.en.bin";
 
 module.exports = (audioPath) => {
   return new Promise((resolve, reject) => {
@@ -55,6 +55,8 @@ module.exports = (audioPath) => {
 --beam-size 1 \
 --best-of 1 \
 --language en`;
+
+
 
 
     exec(
