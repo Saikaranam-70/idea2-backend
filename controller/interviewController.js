@@ -241,20 +241,9 @@ const redis = require("../config/redis");
 const extractAudio = require("../config/extractAudio");
 const transcribeAudio = require("../config/transcribeAudio");
 const evaluateAnswer = require("../config/evaluateAnswer");
-
-/* ================== CREATE ANSWER ================== */
-const fs = require("fs");
-const path = require("path");
-
-const InterviewAnswer = require("../model/InterviewAnswer");
-const InterviewQuestion = require("../model/InterviewQuestion");
 const Topic = require("../model/Topic");
-const User = require("../model/User");
 
-const redis = require("../config/redis");
-const extractAudio = require("../config/extractAudio");
-const transcribeAudio = require("../config/transcribeAudio");
-const evaluateAnswer = require("../config/evaluateAnswer");
+
 
 /* ================== CREATE ANSWER ================== */
 exports.createAnswer = async (req, res) => {
