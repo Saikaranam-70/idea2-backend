@@ -329,9 +329,10 @@ exports.createAnswer = async (req, res) => {
       (p) => p.interviewQuestionId.toString() === questionId.toString()
     );
 
-    if (!alreadyAttempted) {
       user.totalSpeakingSeconds += duration || 0;
       user.confidenceScore += confidenceScore;
+
+    if (!alreadyAttempted) {
       user.points += confidenceScore;
 
       user.interviewProgress.push({
@@ -354,6 +355,7 @@ exports.createAnswer = async (req, res) => {
     /* 🔟 Clear cache */
     await redis.del(`answers:topic:${topicId}`);
     await redis.del(`answers:user:${userId}`);
+    await redis.del(`user:${userId}`)
 
     res.status(201).json({
       success: true,
