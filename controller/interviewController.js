@@ -271,16 +271,17 @@ exports.createAnswer = async (req, res) => {
 
     /* 3️⃣ Speech → Text */
     const transcriptText = await transcribeAudio(audioPath);
-
-    if (!transcriptText || transcriptText.trim() === "") {
+    if (!transcriptText || !transcriptText.trim()) {
       return res.status(400).json({
         success: false,
         message: "Could not extract speech from video",
       });
     }
 
-    /* 4️⃣ Fetch Question */
-    const questionDoc = await InterviewQuestion.findById(questionId);
+    /* 4️⃣ Fetch interview question */
+    const questionDoc = await InterviewQuestion.findById(questionId).select(
+      "question"
+    );
     if (!questionDoc) {
       return res.status(404).json({
         success: false,
@@ -288,16 +289,22 @@ exports.createAnswer = async (req, res) => {
       });
     }
 
-    /* 5️⃣ Fetch Topic (for subject) */
-    const topicDoc = await Topic.findById(topicId).select("subject");
-    if (!topicDoc) {
-      return res.status(404).json({
+    /* 5️⃣ Fetch topic & category (SUBJECT) */
+    const topicDoc = await Topic.findById(topicId).select("category");
+    if (
+      !topicDoc ||
+      !topicDoc.category ||
+      !["OS", "DBMS", "CN", "OOPS", "DSA", "APTITUDE", "INTERVIEW"].includes(
+        topicDoc.category
+      )
+    ) {
+      return res.status(400).json({
         success: false,
-        message: "Topic not found",
+        message: "Invalid or missing topic category",
       });
     }
 
-    const subject = topicDoc.category;
+    const subject = topicDoc.category; // ✅ guaranteed
 
     /* 6️⃣ AI Evaluation */
     const { confidenceScore } = await evaluateAnswer(
@@ -305,7 +312,7 @@ exports.createAnswer = async (req, res) => {
       transcriptText
     );
 
-    /* 7️⃣ Save Answer */
+    /* 7️⃣ Save interview answer */
     const answer = await InterviewAnswer.create({
       userId,
       topicId,
@@ -315,10 +322,10 @@ exports.createAnswer = async (req, res) => {
       confidenceScore,
     });
 
-    /* 8️⃣ Update User ONLY on first attempt */
+    /* 8️⃣ Update user ONLY on first attempt */
     const user = await User.findById(userId);
 
-    const alreadyAttempted = user.interviewProgress.find(
+    const alreadyAttempted = user.interviewProgress.some(
       (p) => p.interviewQuestionId.toString() === questionId.toString()
     );
 
@@ -330,7 +337,7 @@ exports.createAnswer = async (req, res) => {
       user.interviewProgress.push({
         interviewQuestionId: questionId,
         topicId,
-        subject, // ✅ derived from topic
+        subject, // ✅ now always valid
         isAttempted: true,
         confidenceScore,
         timeSpentSeconds: duration || 0,
@@ -366,6 +373,7 @@ exports.createAnswer = async (req, res) => {
     });
   }
 };
+
 
 
 /* ================== GET ALL BY TOPIC ================== */
