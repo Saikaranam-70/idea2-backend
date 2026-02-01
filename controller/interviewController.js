@@ -243,6 +243,20 @@ const transcribeAudio = require("../config/transcribeAudio");
 const evaluateAnswer = require("../config/evaluateAnswer");
 
 /* ================== CREATE ANSWER ================== */
+const fs = require("fs");
+const path = require("path");
+
+const InterviewAnswer = require("../model/InterviewAnswer");
+const InterviewQuestion = require("../model/InterviewQuestion");
+const Topic = require("../model/Topic");
+const User = require("../model/User");
+
+const redis = require("../config/redis");
+const extractAudio = require("../config/extractAudio");
+const transcribeAudio = require("../config/transcribeAudio");
+const evaluateAnswer = require("../config/evaluateAnswer");
+
+/* ================== CREATE ANSWER ================== */
 exports.createAnswer = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -276,7 +290,7 @@ exports.createAnswer = async (req, res) => {
       });
     }
 
-    /* 4️⃣ Fetch interview question */
+    /* 4️⃣ Fetch Question */
     const questionDoc = await InterviewQuestion.findById(questionId);
     if (!questionDoc) {
       return res.status(404).json({
@@ -285,13 +299,24 @@ exports.createAnswer = async (req, res) => {
       });
     }
 
-    /* 5️⃣ AI Evaluation */
+    /* 5️⃣ Fetch Topic (for subject) */
+    const topicDoc = await Topic.findById(topicId).select("subject");
+    if (!topicDoc) {
+      return res.status(404).json({
+        success: false,
+        message: "Topic not found",
+      });
+    }
+
+    const subject = topicDoc.category;
+
+    /* 6️⃣ AI Evaluation */
     const { confidenceScore } = await evaluateAnswer(
       questionDoc.question,
       transcriptText
     );
 
-    /* 6️⃣ Save Answer */
+    /* 7️⃣ Save Answer */
     const answer = await InterviewAnswer.create({
       userId,
       topicId,
@@ -301,11 +326,11 @@ exports.createAnswer = async (req, res) => {
       confidenceScore,
     });
 
-    /* 7️⃣ Update user ONLY if first attempt */
+    /* 8️⃣ Update User ONLY on first attempt */
     const user = await User.findById(userId);
 
     const alreadyAttempted = user.interviewProgress.find(
-      (p) => p.interviewQuestionId.toString() === questionId
+      (p) => p.interviewQuestionId.toString() === questionId.toString()
     );
 
     if (!alreadyAttempted) {
@@ -316,7 +341,7 @@ exports.createAnswer = async (req, res) => {
       user.interviewProgress.push({
         interviewQuestionId: questionId,
         topicId,
-        subject: "INTERVIEW",
+        subject, // ✅ derived from topic
         isAttempted: true,
         confidenceScore,
         timeSpentSeconds: duration || 0,
@@ -326,11 +351,11 @@ exports.createAnswer = async (req, res) => {
       await user.save();
     }
 
-    /* 8️⃣ Cleanup files */
+    /* 9️⃣ Cleanup files */
     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
 
-    /* 9️⃣ Clear cache */
+    /* 🔟 Clear cache */
     await redis.del(`answers:topic:${topicId}`);
     await redis.del(`answers:user:${userId}`);
 
@@ -341,6 +366,7 @@ exports.createAnswer = async (req, res) => {
         answer,
         confidenceScore,
         firstAttempt: !alreadyAttempted,
+        subject,
       },
     });
   } catch (error) {
@@ -351,6 +377,7 @@ exports.createAnswer = async (req, res) => {
     });
   }
 };
+
 
 /* ================== GET ALL BY TOPIC ================== */
 exports.getAnswersByTopic = async (req, res) => {
