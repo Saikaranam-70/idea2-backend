@@ -1,7 +1,8 @@
 const Topic = require("../model/Topic");
 const redis = require("../config/redis");
 const cloudinary = require("../config/cloudinary");
-const User = require("../model/User")
+const User = require("../model/User");
+const sendNotification = require("../config/expoNotification");
 
 const CATEGORY_ORDER = [
   "OS",
