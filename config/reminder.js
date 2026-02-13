@@ -4,7 +4,7 @@ const sendNotification = require("./expoNotification");
 // const { sendNotification } = require("./expoNotification");
 
 // ⏰ Runs every 2 minutes (TESTING)
-cron.schedule("*/2 * * * *", async () => {
+cron.schedule("*/30 * * * *", async () => {
   console.log("⏰ Running cron job...");
 
   try {
