@@ -88,7 +88,7 @@ exports.createTopic = async (req, res) => {
               user.pushToken,
               "New Topic",
               `${topic.title} Is Added Study Now`,
-              "/(tabs)/topic/[topicId]",
+              "/topic/[topicId]",
               {topicId: topic._id}
             )
           }
