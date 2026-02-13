@@ -32,7 +32,8 @@ exports.createJob = async (req, res) => {
         await sendNotification(
           user.pushToken,
           "Job Alert",
-          `${job.companyName} Hiring ${job.position}`
+          `${job.companyName} Hiring ${job.position}`,
+          "/(tabs)/jobs"
         )
       }
     }

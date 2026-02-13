@@ -1,6 +1,7 @@
 const Topic = require("../model/Topic");
 const redis = require("../config/redis");
 const cloudinary = require("../config/cloudinary");
+const User = require("../model/User")
 
 const CATEGORY_ORDER = [
   "OS",
@@ -85,7 +86,9 @@ exports.createTopic = async (req, res) => {
             await sendNotification(
               user.pushToken,
               "New Topic",
-              `${topic.title} Is Added Study Now`
+              `${topic.title} Is Added Study Now`,
+              "/(tabs)/topic/[topicId]",
+              {topicId: topic._id}
             )
           }
         }

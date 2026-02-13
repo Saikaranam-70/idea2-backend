@@ -15,7 +15,8 @@ cron.schedule("*/30 * * * *", async () => {
         await sendNotification(
           user.pushToken,
           "🔥 Reminder",
-          "Practice now to keep your streak!"
+          "Practice now to keep your streak!",
+          "/(tabs)/play"
         );
       }
     }
