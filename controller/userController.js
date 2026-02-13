@@ -474,3 +474,22 @@ exports.getMCQProgressStatus = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
+exports.getPushToken= async(req, res)=>{
+  try {
+    const userId = req.user._id;
+    const {pushToken} = req.body;
+
+    if(!pushToken)
+      return res.status(400).json({message: "Push Token Is Required"});
+
+    await User.findByIdAndUpdate(userId, {
+      pushToken: pushToken
+    })
+    res.status(200).json({message: "Push Token saved Successfully"});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+}

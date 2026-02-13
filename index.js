@@ -11,6 +11,9 @@ const userRoutes = require("./routes/userRoutes")
 const jobRoutes = require("./routes/jobRoutes")
 const InterviewAnswer = require("./routes/interviewAnswerRoutes")
 
+
+require('./config/reminder')
+
 const app = express();
 app.use(express.json());
 app.use(cors());

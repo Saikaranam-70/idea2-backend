@@ -357,6 +357,8 @@ exports.createAnswer = async (req, res) => {
     await redis.del(`answers:user:${userId}`);
     await redis.del(`user:${userId}`)
 
+    console.log("error")
+
     res.status(201).json({
       success: true,
       message: "Speech evaluated successfully",

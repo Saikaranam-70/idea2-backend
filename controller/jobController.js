@@ -1,5 +1,7 @@
 const Job = require("../model/Job");
 const redis = require("../config/redis");
+const User = require("../model/User");
+const sendNotification = require("../config/expoNotification");
 
 /* ================== HELPER: CLEAR JOB LIST CACHE ================== */
 const clearJobListCache = async () => {
@@ -20,11 +22,28 @@ exports.createJob = async (req, res) => {
     // clear all job list caches
     await clearJobListCache();
 
+    
+
+    
+    const users = await User.find();
+
+    for(let user of users){
+      if(user.pushToken){
+        await sendNotification(
+          user.pushToken,
+          "Job Alert",
+          `${job.companyName} Hiring ${job.position}`
+        )
+      }
+    }
+
     res.status(201).json({
       success: true,
-      message: "Job created successfully",
+      message: "Job created and Notification sent Successfully",
       data: job,
     });
+
+
   } catch (error) {
     res.status(400).json({
       success: false,
