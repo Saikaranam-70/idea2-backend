@@ -232,15 +232,31 @@ exports.markTopicAsRead = async (req, res) => {
       order: order || 0,
     };
 
-    const today = new Date().toDateString();
-    const lastActive = user.lastActiveDate
-      ? new Date(user.lastActiveDate).toDateString()
-      : null;
+    const today = new Date();
 
-    if (lastActive !== today) {
-      user.streak += 1;
-      user.lastActiveDate = new Date();
-    }
+if (!user.lastActiveDate) {
+  // First activity ever
+  user.streak = 1;
+} else {
+  const lastActive = new Date(user.lastActiveDate);
+
+  const diffDays = Math.floor(
+    (today - lastActive) / (1000 * 60 * 60 * 24)
+  );
+
+  if (diffDays === 0) {
+    // Already active today → do nothing
+  } else if (diffDays === 1) {
+    // Yesterday active → continue streak
+    user.streak += 1;
+  } else {
+    // Missed days → reset streak
+    user.streak = 1;
+  }
+}
+
+user.lastActiveDate = today;
+
 
     await user.save();
     await redis.del(`user:${userId}`);

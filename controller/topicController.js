@@ -78,6 +78,18 @@ exports.createTopic = async (req, res) => {
     await redis.del("topics:all");
     await redis.del("topics:names")
 
+    const users = await User.find();
+    
+        for(let user of users){
+          if(user.pushToken){
+            await sendNotification(
+              user.pushToken,
+              "New Topic",
+              `${topic.title} Is Added Study Now`
+            )
+          }
+        }
+
     res.status(201).json({
       success: true,
       message: "Topic Created Successfully",

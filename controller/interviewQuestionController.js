@@ -24,6 +24,8 @@ exports.createQuestion = async (req, res) => {
     // 🔥 clear cache
     await redis.flushall();
 
+    
+
     res.status(201).json({
       success: true,
       message: "Interview Question Created",
