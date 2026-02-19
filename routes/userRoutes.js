@@ -3,6 +3,7 @@ const { sendOTP, verifyOTP, checkUsername, completeProfile, getProfile, logout, 
 const authMiddleware = require("../middleware/middleware");
 const { getAllTopicsInOrder } = require("../controller/topicController");
 const { createContact } = require("../controller/contactController");
+const { createFeedback } = require("../controller/feedbackController");
 
 
 const router = express.Router();
@@ -34,4 +35,5 @@ router.get(
 router.post("/save-token", authMiddleware, getPushToken);
 router.delete("/delete-account", authMiddleware, deleteAccount)
 router.post("/contact", createContact);
+router.post("/feedback", createFeedback)
 module.exports = router;
