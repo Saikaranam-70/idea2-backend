@@ -525,3 +525,26 @@ exports.deleteAnswer = async (req, res) => {
     });
   }
 };
+
+
+exports.getAnswerByQuestionId = async(req, res) => {
+  try {
+    const {questionId} = req.params;
+    const cacheKey = `answer:questionId:${questionId}`;
+
+    const cached = await redis.get(cacheKey);
+    if(cached)
+      return res.status(200).json({success: true, cached:true, data: JSON.parse(cached)});
+
+    const answer = await InterviewAnswer.findOne({questionId: questionId}).lean();
+    if(!answer)
+      return res.status(404).json({success: false, message: "Answer Not Found"});
+
+    await redis.set(cacheKey, JSON.stringify(answer), 'EX', 60*60);
+
+    return res.status(200).json({success:true, cached:false, data:answer});
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({message: "Internal Server Error", success:false})
+  }
+}

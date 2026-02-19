@@ -8,6 +8,7 @@ const {
   getAnswerById,
   updateAnswer,
   deleteAnswer,
+  getAnswerByQuestionId,
 } = require("../controller/interviewController");
 
 const router = express.Router();
@@ -17,6 +18,7 @@ router.post("/", auth, upload.single("video"), createAnswer);
 
 /* READ */
 router.get("/topic/:topicId", getAnswersByTopic);
+router.get("/question/:questionId", getAnswerByQuestionId)
 router.get("/:id", getAnswerById);
 
 /* UPDATE – text only */
