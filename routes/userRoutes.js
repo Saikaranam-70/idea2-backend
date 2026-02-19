@@ -2,6 +2,7 @@ const express = require("express");
 const { sendOTP, verifyOTP, checkUsername, completeProfile, getProfile, logout, markTopicAsRead, getTopicReadStatus, submitMCQ, submitInterview, getMCQCompletionStatus, getInterviewCompletionStatus, getStreakAndPoints, getMCQProgressStatus, getPushToken, deleteAccount } = require("../controller/userController");
 const authMiddleware = require("../middleware/middleware");
 const { getAllTopicsInOrder } = require("../controller/topicController");
+const { createContact } = require("../controller/contactController");
 
 
 const router = express.Router();
@@ -32,5 +33,5 @@ router.get(
 
 router.post("/save-token", authMiddleware, getPushToken);
 router.delete("/delete-account", authMiddleware, deleteAccount)
-
+router.post("/contact", createContact);
 module.exports = router;
