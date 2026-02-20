@@ -16,7 +16,7 @@ const isToday = (date) => {
 };
 
 // ⏰ Run every 30 minutes
-cron.schedule("*/30 * * * *", async () => {
+cron.schedule("*/2 * * * *", async () => {
   console.log("⏰ Running cron job...");
 
   try {
